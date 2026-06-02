@@ -100,18 +100,18 @@ Si no tiene Brave, saltar este paso y usar solo los datos del usuario.
 
 ---
 
-## PASO 3 — Buscar en AliExpress por imagen (enriquecimiento opcional)
+## PASO 3 — Buscar en AliExpress por imagen (OBLIGATORIO para multimedia)
 
 ```
 aliexpress_image_search  imageUrl="<URL de la imagen principal>"
 ```
 
-Devuelve hasta 8 productos similares con título, precio, rating y órdenes. Usar esta información para:
-- Confirmar que el precio es competitivo
-- Obtener palabras clave alternativas
-- Inspirar la descripción del producto
+**REGLA: Buscar con MÚLTIPLES imágenes del producto para maximizar resultados.**
+Usar al menos 3 URLs diferentes del producto (principal, cápsulas, empaque, sistema, etc.). Combinar todas las imágenes únicas obtenidas.
 
-Si la imagen no es accesible públicamente o AliExpress no devuelve resultados, continuar sin este paso.
+**Objetivo: recolectar al menos 10 imágenes adicionales de AliExpress** para enriquecer el array `multimedia` en `embudo_de_ventas`.
+
+Devuelve hasta 8 productos por búsqueda, cada uno con múltiples imágenes. Ejecutar `aliexpress_image_search` para cada URL de imagen del producto y unificar los resultados eliminando duplicados.
 
 ---
 
@@ -313,7 +313,7 @@ flow_set_bot_field
 Usuario da: nombre, precio, imagen, asesor, tipo
         │
         ├─→ Brave Search (opcional) → mercado, keywords
-        ├─→ AliExpress (opcional) → similares, precios ref
+        ├─→ AliExpress (OBLIGATORIO) → 3+ busquedas, 10+ imagenes
         │
         ├─→ Construir JSON con 8 secciones
         │
@@ -347,9 +347,10 @@ Usuario da: nombre, precio, imagen, asesor, tipo
 1. **Un solo campo por producto.** No crear múltiples campos. Toda la configuración del producto va en `[Producto Ventas Wp] {N}`.
 2. **El número en el nombre es el identificador.** Usar números consecutivos. Si el último es 109, el siguiente es 110.
 3. **El JSON se guarda como string.** `flow_create_bot_field` recibe el JSON serializado en el campo `value`.
-4. **Brave y AliExpress son opcionales.** Si no hay `BRAVE_API_KEY`, saltar esos pasos. El producto se crea igual con los datos del usuario.
+4. **Brave es opcional. AliExpress es OBLIGATORIO para multimedia.** Si no hay `BRAVE_API_KEY`, saltar Brave. Pero AliExpress siempre debe ejecutarse con al menos 3 imágenes del producto para recolectar 10+ imágenes adicionales.
 5. **Sin conexión a Dropi.** Los datos del producto siempre los da el usuario manualmente. No intentar conectar a la API de Dropi.
 6. **Borrar antes de reintentar.** Si algo sale mal, usar `flow_delete_bot_field` y `shop_delete_product` para limpiar antes de volver a crear.
 7. **NUNCA asumir moneda, precio, asesor ni ningún dato.** Si el usuario no lo especifica, preguntar. Ejemplo: "¿El precio está en COP o USD?".
 8. **El precio en `shop_create_product` debe ser entero.** Redondear sin decimales (ej: 89.99 → 90). En el JSON del bot field va con decimales como string ("89.99").
 9. **REGLA ABSOLUTA — El prompt debe ser ESTRUCTURA IDÉNTICA al template original.** Solo se reemplazan los datos del producto (nombre, precio, asesor, características, etc.). NO se puede acortar, resumir, ni omitir secciones. Si el template tiene 5 etapas (CONTEXTUAL, CONVERSACIONAL, POSIBLES SITUACIONES, REGLAS), el nuevo prompt debe tener exactamente las mismas 5 etapas con la misma densidad de contenido. Si el template tiene guion conversacional con diálogos de ejemplo, el nuevo debe tenerlos. Si el template tiene 12 objeciones, el nuevo debe tener 12 objeciones. NUNCA reducir. Si el modelo no puede generar un prompt de esta longitud y fidelidad, informar al usuario para que use otro modelo.
+10. **REGLA — AliExpress: buscar con MÚLTIPLES imágenes siempre.** No buscar con una sola imagen. Usar al menos 3 URLs diferentes del producto (principal, empaque, cápsulas, sistema, etc.). Combinar todas las imágenes únicas de todas las búsquedas. El objetivo es recolectar mínimo 10 imágenes adicionales para el array `multimedia` del `embudo_de_ventas`. Las imágenes originales del usuario + las de AliExpress deben sumar al menos 15-20 en total.
