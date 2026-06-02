@@ -1,190 +1,167 @@
-# CMP ChateaPro — MCP Servers
+# CMP ChateaPro — MCP Server Unificado
 
-Suite de servidores MCP (Model Context Protocol) para automatizar la creación de productos en ChateaPro usando IA, búsqueda web Brave y búsqueda visual AliExpress.
+Servidor MCP único con **229+ tools** para crear productos en ChateaPro investigando con Brave Search y buscando imágenes en AliExpress.
+
+---
+
+## Inicio rápido
+
+```bash
+# 1. Clonar
+git clone https://github.com/FaidersAltamar/cmp-chateapro-mcp.git
+cd cmp-chateapro-mcp
+
+# 2. Instalar dependencias
+cd unified-mcp-server && npm install && cd ..
+
+# 3. Configurar credenciales
+cp .env.sample .env
+# Edita .env con tu token (obligatorio) y Brave key (opcional)
+
+# 4. Verificar que arranca
+node -e "import('./unified-mcp-server/index.js').then(()=>{console.error('OK');process.exit(0)}).catch(e=>{console.error('FALLO:',e.message);process.exit(1)})"
+# Debe mostrar: Unified MCP Server running on stdio — ChateaPro + AliExpress + Brave[enabled/disabled]
+```
+
+---
 
 ## Arquitectura
 
 ```
-┌──────────────────────────────────────────┐
-│              Cliente MCP                  │
-│    (Claude Desktop / Cursor / OpenCode)   │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────┐
-│         Unified MCP Server        │
-│          (servidor único)         │
-├──────────────────────────────────┤
-│  ChateaPro (220 tools)            │
-│  Brave Search (8 tools)           │
-│  AliExpress Image (1 tool)        │
-└──────┬────────┬────────┬─────────┘
+Cliente MCP (Claude Desktop / OpenCode / Cursor)
+          │
+          ▼
+┌─────────────────────────────────┐
+│     Unified MCP Server           │
+│     1 solo proceso stdio         │
+├─────────────────────────────────┤
+│  ChateaPro      220 tools        │
+│  Brave Search     8 tools        │
+│  AliExpress       1 tool         │
+└──────┬────────┬────────┬────────┘
        │        │        │
        ▼        ▼        ▼
    ChateaPro  Brave    Thieve
       API      API     (AliExpr)
 ```
 
-## Servidores
-
-| Servidor | Tools | Transporte | Auth | Build |
-|---|---|---|---|---|
-| **unified-mcp-server** | 229+ | stdio | `CHATEAPRO_API_TOKEN` + `BRAVE_API_KEY` | No (JS puro) |
-| chateapro-mcp-server | 220 | stdio | `CHATEAPRO_API_TOKEN` | No |
-| brave-search-mcp-server | 8 | stdio/http | `BRAVE_API_KEY` | Sí |
-| aliexpress-image-search-mcp-server | 1 | stdio | Ninguna | No |
-| dropi-mcp-server | 20+ | stdio | `DROPI_INTEGRATION_KEY` | Sí |
-
-> **Recomendación:** Usa `unified-mcp-server` como servidor único. Incluye ChateaPro (220), Brave Search (8) y AliExpress (1) en un solo proceso.
-
----
-
-## Instalación
-
-### 1. Clonar
-
-```bash
-git clone https://github.com/FaidersAltamar/cmp-chateapro-mcp.git
-cd cmp-chateapro-mcp
-```
-
-### 2. Instalar dependencias (OBLIGATORIO)
-
-```bash
-cd unified-mcp-server && npm install && cd ..
-```
-
-> **Sin este paso el servidor no arranca.** `npm install` descarga `@modelcontextprotocol/sdk`.
-
-### 3. Configurar variables de entorno
-
-```bash
-cp .env.sample .env
-```
-
-Edita `.env` con tus credenciales:
-
-```env
-CHATEAPRO_API_TOKEN=tu-token-de-chateapro
-BRAVE_API_KEY=tu-brave-api-key
-```
-
-- **CHATEAPRO_API_TOKEN**: obligatorio. https://chateapro.app → Workspace Settings
-- **BRAVE_API_KEY**: opcional. Si no se configura, las 8 tools de Brave se ocultan.
-
-### 4. Verificar que arranca
-
-```bash
-cd unified-mcp-server && node -e "
-import('./index.js').then(() => {
-  console.error('OK - Servidor listo');
-  process.exit(0);
-}).catch(e => {
-  console.error('FALLO:', e.message);
-  process.exit(1);
-});
-"
-```
-
-Debes ver: `Unified MCP Server running on stdio — ChateaPro + AliExpress + Brave[enabled/disabled]`
-
 ---
 
 ## Configuración del cliente MCP
 
-> **IMPORTANTE:** Reemplaza `<ruta>` con la ruta ABSOLUTA donde clonaste el repo. No uses `~`, usa la ruta completa.
+Reemplaza `<RUTA>` con la ruta absoluta donde clonaste el repo. Usa `pwd` para obtenerla.
 
 ```json
 {
   "mcpServers": {
     "unified": {
       "command": "node",
-      "args": ["<ruta>/cmp-chateapro-mcp/unified-mcp-server/index.js"],
+      "args": ["<RUTA>/cmp-chateapro-mcp/unified-mcp-server/index.js"],
       "env": {
-        "CHATEAPRO_API_TOKEN": "tu-token",
-        "BRAVE_API_KEY": "tu-brave-key"
+        "CHATEAPRO_API_TOKEN": "tu-token-aqui",
+        "BRAVE_API_KEY": "tu-brave-key-aqui"
       }
     }
   }
 }
 ```
 
-### ¿Cómo obtener la ruta absoluta?
+### Archivos de configuración por cliente
 
-```bash
-# En macOS/Linux:
-cd cmp-chateapro-mcp && pwd
-# Copia esa ruta y reemplaza <ruta> en el JSON de arriba.
-```
-
-### Archivos de configuración por plataforma
-
-| Cliente | Archivo |
-|---|---|
-| **Claude Desktop** macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| **OpenCode** | `~/.config/opencode/opencode.json` |
-| **Cursor** | `~/.cursor/mcp.json` |
-| **Windsurf** | `~/.codeium/windsurf/mcp_config.json` |
+| Cliente | SO | Ruta del archivo |
+|---|---|---|
+| Claude Desktop | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Desktop | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| OpenCode | macOS | `~/.config/opencode/opencode.json` |
+| OpenCode | Windows | `%USERPROFILE%\.config\opencode\opencode.json` |
+| Cursor | macOS | `~/.cursor/mcp.json` |
+| Cursor | Windows | `%USERPROFILE%\.cursor\mcp.json` |
+| Windsurf | macOS | `~/.codeium/windsurf/mcp_config.json` |
 
 ---
 
-## Troubleshooting
+## Variables de entorno
 
-### "El servidor no aparece en el cliente MCP"
+Crea un archivo `.env` en la raíz del repo copiando `.env.sample`:
 
-1. Verifica que `npm install` se ejecutó dentro de `unified-mcp-server/`
-2. Verifica que `.env` existe en la raíz del repo con `CHATEAPRO_API_TOKEN`
-3. Verifica que la ruta en el JSON de configuración es **absoluta** y apunta a `unified-mcp-server/index.js`
-4. Reinicia el cliente MCP después de cada cambio
-
-### "Cannot find package @modelcontextprotocol/sdk"
-
-```bash
-cd unified-mcp-server && rm -rf node_modules package-lock.json && npm install
+```env
+CHATEAPRO_API_TOKEN=tu-token   # Obligatorio — https://chateapro.app → Workspace Settings
+BRAVE_API_KEY=tu-brave-key     # Opcional — https://brave.com/search/api/
 ```
 
-### "CHATEAPRO_API_TOKEN environment variable is required"
+| Variable | Requerida | Descripción |
+|---|---|---|
+| `CHATEAPRO_API_TOKEN` | Sí | Token Bearer de ChateaPro |
+| `BRAVE_API_KEY` | No | Si no se configura, las 8 tools de Brave se ocultan |
 
-Copia `.env.sample` a `.env` y edita el token. El `.env` debe estar en la raíz del repo (`cmp-chateapro-mcp/.env`), NO dentro de `unified-mcp-server/`.
+---
 
-### "Error: Cannot find module ../chateapro-mcp-server/tools.js"
+## Tools disponibles (229+)
 
-No moviste las carpetas. La estructura debe ser exactamente:
-```
-cmp-chateapro-mcp/
-├── .env
-├── unified-mcp-server/
-│   └── index.js
-└── chateapro-mcp-server/
-    └── tools.js
-```
+### ChateaPro — 220 tools
+
+| Categoría | Tools destacadas |
+|---|---|
+| **Producto** | `shop_create_product`, `shop_update_product`, `shop_delete_product`, `shop_product_get_info`, `shop_products`, `shop_create_product_variant`, `shop_update_product_variant`, `shop_delete_product_variant`, `shop_product_variants` |
+| **Órdenes** | `shop_orders`, `shop_create_order`, `shop_update_order`, `shop_order_get_info` |
+| **Descuentos** | `shop_discount_codes`, `shop_create_discount_code`, `shop_update_discount_code`, `shop_delete_discount_code` |
+| **Carrito** | `subscriber_cart`, `subscriber_add_to_cart`, `subscriber_remove_from_cart`, `subscriber_cart_paid` |
+| **Flow / AI** | `flow_subflows`, `flow_agents`, `flow_set_default_start_flow`, `flow_set_default_ai_provider`, `flow_get_default_ai_provider`, `flow_ai_agents`, `flow_update_ai_agent_provider`, `flow_ai_tasks`, `flow_set_audio_transcription` |
+| **Bot Fields** | `flow_bot_fields`, `flow_create_bot_field`, `flow_set_bot_field`, `flow_delete_bot_field`, `flow_set_bot_field_by_name`, `flow_delete_bot_field_by_name` |
+| **Suscriptores** | `subscribers_list`, `subscriber_get_info`, `subscriber_create`, `subscriber_update`, `subscriber_delete`, `subscriber_add_tag`, `subscriber_remove_tag`, `subscriber_set_user_field`, `subscriber_pause_bot`, `subscriber_resume_bot`, `subscriber_move_chat_to`, `subscriber_assign_agent` |
+| **Envíos** | `subscriber_send_main_flow`, `subscriber_send_sub_flow`, `subscriber_broadcast`, `subscriber_broadcast_by_tag`, `subscriber_broadcast_by_segment`, `subscriber_send_text`, `subscriber_send_sms`, `subscriber_send_email`, `subscriber_send_whatsapp_template` |
+| **Integraciones** | `integration_get_shopify`, `integration_update_shopify`, `integration_get_dropi`, `integration_update_dropi`, `integration_get_openai`, `integration_update_openai`, `integration_get_woocommerce`, `integration_get_s3storage` |
+| **Workspace** | `team_info`, `team_flows`, `team_members`, `flow_summary`, `flow_agent_summary`, `workspace_settings_channels`, `workspace_settings_update_channels`, `team_bot_users` |
+| **Tags / Labels** | `flow_tags`, `flow_create_tag`, `flow_delete_tag`, `team_labels`, `team_create_label`, `team_delete_label` |
+| **Tickets** | `team_ticket_lists`, `team_create_ticket`, `team_update_ticket`, `team_delete_ticket` |
+| **Templates** | `templates_list`, `template_installs`, `whatsapp_template_list`, `whatsapp_template_create`, `whatsapp_template_delete`, `whatsapp_template_sync` |
+| **Usuario** | `user_info`, `user_change_password`, `notifications_recent`, `notification_mark_read` |
+| **+ más** | Segmentos, Custom Events, Agent Groups, FB Utility Templates, OpenAI Embeddings, Mini Apps, Chat Messages |
+
+### Brave Search — 8 tools (requiere `BRAVE_API_KEY`)
+
+| Tool | Descripción |
+|---|---|
+| `brave_web_search` | Búsqueda web con FAQ, discusiones, noticias y videos |
+| `brave_image_search` | Búsqueda de imágenes |
+| `brave_video_search` | Búsqueda de videos |
+| `brave_news_search` | Búsqueda de noticias |
+| `brave_local_search` | Negocios, restaurantes, lugares |
+| `brave_summarizer` | Resúmenes AI de resultados web |
+| `brave_llm_context` | Contenido web para RAG / grounding |
+| `brave_place_search` | POIs, ciudades, direcciones |
+
+### AliExpress — 1 tool (sin autenticación)
+
+| Tool | Descripción |
+|---|---|
+| `aliexpress_image_search` | Busca productos por imagen. Hasta 8 resultados con título, precio, rating, órdenes. |
 
 ---
 
 ## Flujo de creación de producto
 
 ```
-Usuario: "Crea producto: Hydrocare, $41,000, imagen.url, asesor Wilson..."
+Usuario da: nombre, precio, moneda, asesor, imagen, tipo
                     │
     ┌───────────────┼───────────────┐
     ▼               ▼               ▼
-  Datos manual   Brave Search    AliExpress
-  ───────────    ────────────    ──────────
-  nombre            contexto        similares
-  precio            mercado         por imagen
-  imágenes          keywords        precios ref
+  Brave Search    AliExpress      Datos manual
+  ────────────    ──────────      ────────────
+  mercado          similares       nombre
+  keywords         por imagen      precio
+  competencia      precios ref     asesor
     │               │               │
     └───────────────┼───────────────┘
                     ▼
-              IA ensambla
-         JSON con 8 secciones
+         IA construye JSON (8 secciones)
                     │
                     ▼
-    ┌───────────────────────────────┐
-    │  flow_create_bot_field        │
-    │  [Producto Ventas Wp] 109     │
-    │  (UN solo campo con todo)     │
-    └───────────────────────────────┘
+    ┌──────────────────────────────────┐
+    │  flow_create_bot_field            │
+    │  → [Producto Ventas Wp] {N}       │
+    │  (UN solo campo con todo el JSON) │
+    └──────────────────────────────────┘
                     │
                     ▼
             shop_create_product
@@ -194,63 +171,35 @@ Usuario: "Crea producto: Hydrocare, $41,000, imagen.url, asesor Wilson..."
            Producto creado ✓
 ```
 
-### Detalle de cada fase
-
-| # | Fase | Fuente | Tools clave |
-|---|---|---|---|
-| 1 | Recibir datos | Usuario (manual) | Pedir: nombre, precio, imagen, asesor, tipo |
-| 2 | Investigar (opcional) | Brave | `brave_web_search`, `brave_image_search` |
-| 3 | Similares (opcional) | AliExpress | `aliexpress_image_search` |
-| 4 | Armar JSON 8 secciones | IA | Estructura exacta en SKILL.md |
-| 5 | Inyectar campo único | ChateaPro | `flow_create_bot_field` → `[Producto Ventas Wp] {N}` |
-| 6 | Crear en shop | ChateaPro | `shop_create_product`, `shop_create_product_variant` |
-
 ---
 
-## Tools disponibles (229+)
+## Estructura del repositorio
 
-### ChateaPro (220 tools)
-
-| Categoría | Tools destacadas |
-|---|---|
-| Ecommerce | `shop_products`, `shop_create_product`, `shop_update_product`, `shop_delete_product`, `shop_product_variants`, `shop_create_product_variant`, `shop_orders`, `shop_create_order`, `shop_discount_codes`, `subscriber_cart`, `subscriber_add_to_cart`, `subscriber_cart_paid` |
-| Flow | `flow_subflows`, `flow_agents`, `flow_set_default_start_flow`, `flow_set_default_ai_provider`, `flow_ai_agents`, `flow_ai_tasks` |
-| Subscriber | `subscribers_list`, `subscriber_get_info`, `subscriber_create`, `subscriber_update`, `subscriber_add_tag`, `subscriber_set_user_field`, `subscriber_send_sub_flow` |
-| Sending | `subscriber_broadcast`, `subscriber_broadcast_by_tag`, `subscriber_send_text`, `subscriber_send_sms`, `subscriber_send_email`, `subscriber_send_whatsapp_template` |
-| Integration | `integration_get_shopify`, `integration_update_shopify`, `integration_get_dropi`, `integration_update_dropi`, `integration_get_openai`, `integration_update_openai` |
-| Workspace | `team_info`, `team_flows`, `team_members`, `flow_summary`, `workspace_settings_channels` |
-| + 15 categorías más | Agent Groups, Bot Fields, Custom Events, Labels, Tags, Segments, Tickets, Templates, WhatsApp Templates, OpenAI Embeddings... |
-
-### Brave Search (8 tools)
-
-| Tool | Descripción |
-|---|---|
-| `brave_web_search` | Búsqueda web + FAQ + discusiones + noticias + videos |
-| `brave_image_search` | Búsqueda de imágenes |
-| `brave_video_search` | Búsqueda de videos |
-| `brave_news_search` | Búsqueda de noticias |
-| `brave_local_search` | Lugares, restaurantes, negocios |
-| `brave_summarizer` | Resúmenes AI de resultados web |
-| `brave_llm_context` | Contenido optimizado para RAG/grounding |
-| `brave_place_search` | POIs, ciudades, direcciones |
-
-### AliExpress (1 tool)
-
-| Tool | Descripción |
-|---|---|
-| `aliexpress_image_search` | Busca productos en AliExpress por imagen (hasta 8 resultados) |
-
----
-
-## Variables de entorno
-
-| Variable | Servidor | Requerida | Descripción |
-|---|---|---|---|
-| `CHATEAPRO_API_TOKEN` | Unified | Sí | Token Bearer de ChateaPro |
-| `CHATEAPRO_API_URL` | Unified | No | URL personalizada (default: `https://chateapro.app/api`) |
-| `BRAVE_API_KEY` | Unified | No | API key de Brave Search |
-| `SHOPIFY_STORE_URL` | ChateaPro | No | URL de tienda Shopify |
-| `SHOPIFY_ACCESS_TOKEN` | ChateaPro | No | Token de acceso Shopify |
+```
+cmp-chateapro-mcp/
+├── .env.sample               ← Template de credenciales
+├── .gitignore
+├── README.md                  ← Este archivo
+├── SKILL.md                   ← Flujo detallado para agentes IA
+│
+├── unified-mcp-server/        ← 🚀 Servidor principal (229+ tools)
+│   ├── index.js               ← Entry point (JS puro, sin build)
+│   ├── package.json           ← Solo depende de @modelcontextprotocol/sdk
+│   └── AGENTS.md              ← Documentación técnica interna
+│
+├── chateapro-mcp-server/      ← ChateaPro API wrapper
+│   ├── tools.js               ← apiRequest() + 220 TOOLS (módulo compartido)
+│   ├── index.js               ← Standalone server (53 líneas)
+│   └── package.json
+│
+├── brave-search-mcp-server/   ← Brave Search API (TypeScript, referencia)
+│   ├── src/                   ← Código fuente TS
+│   └── package.json
+│
+└── aliexpress-image-search-mcp-server/  ← AliExpress image search
+    ├── index.js               ← 1 tool, JS puro, sin auth
+    └── package.json
+```
 
 ---
 
@@ -258,22 +207,44 @@ Usuario: "Crea producto: Hydrocare, $41,000, imagen.url, asesor Wilson..."
 
 - **Node.js** >= 18
 - **npm** >= 9
+- Conexión a internet
 
 ---
 
-## Estructura del repositorio
+## Troubleshooting
 
+### El servidor no aparece en el cliente MCP
+
+1. ¿Ejecutaste `npm install` dentro de `unified-mcp-server/`?
+2. ¿Existe `.env` en la raíz con `CHATEAPRO_API_TOKEN`?
+3. ¿La ruta en la config MCP es **absoluta** (no `~`, no relativa)?
+4. ¿Reiniciaste el cliente MCP después de configurarlo?
+
+### `Cannot find package @modelcontextprotocol/sdk`
+
+```bash
+cd unified-mcp-server
+rm -rf node_modules package-lock.json
+npm install
 ```
-cmp-chateapro-mcp/
-├── .env.sample
-├── .gitignore
-├── README.md
-├── SKILL.md
-├── unified-mcp-server/          ← 🚀 Servidor principal (229+ tools)
-├── chateapro-mcp-server/        ← ChateaPro standalone
-├── dropi-mcp-server/            ← Dropi (opcional, TypeScript)
-├── brave-search-mcp-server/     ← Brave Search (TypeScript)
-└── aliexpress-image-search-mcp-server/ ← AliExpress image search
+
+### `CHATEAPRO_API_TOKEN environment variable is required`
+
+El `.env` debe estar en la raíz (`cmp-chateapro-mcp/.env`), no dentro de `unified-mcp-server/`.
+
+### `Cannot find module ../chateapro-mcp-server/tools.js`
+
+No muevas las carpetas. La estructura debe mantenerse como en el repo.
+
+### Brave tools no aparecen
+
+`BRAVE_API_KEY` no está configurado en `.env`. Sin esta variable, las 8 tools de Brave se ocultan automáticamente.
+
+### Verificar instalación
+
+```bash
+cd cmp-chateapro-mcp
+node -e "import('./unified-mcp-server/index.js').then(()=>{console.error('OK');process.exit(0)}).catch(e=>{console.error('FALLO:',e.message);process.exit(1)})"
 ```
 
 ---
