@@ -66,7 +66,7 @@ El usuario proporciona los datos manualmente. Pedir siempre:
 |---|---|---|
 | **Nombre del producto** | Sí | `Hydrocare - Gel Hidratante con Ácido Hialurónico` |
 | **Precio** | Sí | `41000` (número entero, sin decimales para ChateaPro) |
-| **Moneda** | Sí | `COP` |
+| **Moneda** | Sí | `COP`, `USD`, etc. **NUNCA asumir. Preguntar siempre.** |
 | **Imagen principal** (URL) | Sí | `https://d39ru7awumhhs2.cloudfront.net/.../HYDROCARE.png` |
 | **ID de Dropi** (si aplica) | No | `915488` |
 | **Tipo de producto** | Sí | `fisico` o `digital` |
@@ -76,6 +76,14 @@ El usuario proporciona los datos manualmente. Pedir siempre:
 | **SKU** | No | `7708679955630` |
 | **Stock** | No | `2000` |
 | **Bodega / Ciudad** | No | `Cali` |
+
+### Reglas para recolectar datos
+
+1. **Moneda: NUNCA asumir.** Si el usuario no la especifica, preguntar explícitamente: "¿En qué moneda está el precio? ¿COP, USD...?".
+2. **Precio: siempre preguntar el precio de venta sugerido**, no el costo del proveedor.
+3. **Imagen: debe ser URL pública accesible desde internet.** Si la imagen viene de Dropi, usar la URL original de Dropi. Si el usuario la sube a ChateaPro, usar la URL de ChateaPro.
+4. **Asesor: siempre preguntar el nombre.** Define el tono de toda la conversación.
+5. **Si un dato no fue proporcionado, preguntar.** No inventar ni deducir valores.
 
 ---
 
@@ -342,3 +350,5 @@ Usuario da: nombre, precio, imagen, asesor, tipo
 4. **Brave y AliExpress son opcionales.** Si no hay `BRAVE_API_KEY`, saltar esos pasos. El producto se crea igual con los datos del usuario.
 5. **Sin conexión a Dropi.** Los datos del producto siempre los da el usuario manualmente. No intentar conectar a la API de Dropi.
 6. **Borrar antes de reintentar.** Si algo sale mal, usar `flow_delete_bot_field` y `shop_delete_product` para limpiar antes de volver a crear.
+7. **NUNCA asumir moneda, precio, asesor ni ningún dato.** Si el usuario no lo especifica, preguntar. Ejemplo: "¿El precio está en COP o USD?".
+8. **El precio en `shop_create_product` debe ser entero.** Redondear sin decimales (ej: 89.99 → 90). En el JSON del bot field va con decimales como string ("89.99").
