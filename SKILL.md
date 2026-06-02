@@ -6,14 +6,14 @@ Este skill guía al usuario desde que clona el repo hasta tener un producto crea
 
 ## Requisitos previos
 
-El usuario debe tener clonado el repo y configurar **3 fuentes**:
+El usuario debe tener clonado el repo y configurar **2 variables** en `.env`:
 
-| Fuente | MCP Server | Credencial | Dónde obtenerla |
-|---|---|---|---|
-| **ChateaPro** | `unified-mcp-server` | `CHATEAPRO_API_TOKEN` | https://chateapro.app → Workspace Settings |
-| **Brave Search** | `unified-mcp-server` | `BRAVE_API_KEY` | https://brave.com/search/api/ |
-| **AliExpress** | `unified-mcp-server` | Ninguna (API pública) | Thieve.co |
-| **Dropi** | Externo (ya sincronizado) | `DROPI_STORE_ID` + `DROPI_API_KEY` | Dropi Dashboard |
+| Variable | Servidor | Dónde obtenerla |
+|---|---|---|
+| `CHATEAPRO_API_TOKEN` | Unified MCP | https://chateapro.app → Workspace Settings |
+| `BRAVE_API_KEY` | Unified MCP | https://brave.com/search/api/ |
+
+AliExpress no requiere credenciales (API pública de Thieve.co).
 
 ```bash
 cp .env.sample .env
@@ -27,22 +27,26 @@ cd unified-mcp-server && npm install && node index.js
 
 ```
 user_info                → ChateaPro: ¿token válido?
-integration_get_dropi    → Dropi: ¿integración verificada?
 team_info                → Workspace: ¿activo?
 shop_products            → Catálogo: ¿productos existentes?
 ```
 
 ---
 
-## PASO 1 — Obtener datos del producto desde Dropi
+## PASO 1 — Recibir datos del producto
 
-El usuario indica un **ID de Dropi**. El MCP de Dropi (externo, ya sincronizado) devuelve:
-- Nombre del producto
-- Precio
-- Imágenes (URLs)
-- Descripción / características
-- Tipo de producto (físico/digital)
-- Variantes (si aplica)
+El usuario proporciona manualmente los datos del producto:
+
+| Campo | Ejemplo |
+|---|---|
+| **Nombre** | Foam Cleaner All-In-One |
+| **Precio** | 59700.00 |
+| **Imágenes** (URLs) | https://cdn.shopify.com/.../producto.png, https://... |
+| **Descripción** | Limpiador multisuperficies de 250ml... |
+| **Tipo** | físico / digital |
+| **Variantes** | Color, Talla (si aplica) |
+
+> Si el usuario viene de Dropi u otra fuente, simplemente pega los datos. No se requiere conexión directa a Dropi.
 
 ---
 
@@ -66,7 +70,7 @@ La IA extrae:
 ## PASO 3 — Buscar productos similares por imagen en AliExpress
 
 ```
-aliexpress_image_search  imageUrl="<URL de imagen del producto desde Dropi>"
+aliexpress_image_search  imageUrl="<URL de la imagen principal del producto>"
 ```
 
 Devuelve hasta 8 productos similares con:
@@ -81,18 +85,18 @@ Esto enriquece el conocimiento del producto y ayuda a posicionarlo en el mercado
 
 ## PASO 4 — Armar la estructura del producto para ChateaPro
 
-Con los datos recolectados (Dropi + Brave + AliExpress), la IA construye esta estructura:
+Con los datos recolectados (usuario + Brave + AliExpress), la IA construye esta estructura:
 
 ```json
 {
   "informacion_de_producto": {
-    "nombre": "Nombre del producto (de Dropi)",
+    "nombre": "Nombre del producto",
     "precio": "59700.00",
     "tipo": "fisico",
     "variable": "SIMPLE",
     "imagen": "URL de imagen principal",
     "estado": "activo",
-    "descripcion": "Descripción generada con datos de Brave + Dropi"
+    "descripcion": "Descripción generada con datos de Brave + AliExpress"
   },
   "embudo_de_ventas": {
     "mensaje_inicial": "Mensaje de bienvenida personalizado",
@@ -120,9 +124,9 @@ Con los datos recolectados (Dropi + Brave + AliExpress), la IA construye esta es
 ## PASO 5 — Crear el producto en ChateaPro
 
 ```
-shop_create_product   → Crea el producto con nombre, precio, imagen, descripción
+shop_create_product         → Crea el producto con nombre, precio, imagen, descripción
 shop_create_product_variant → Agrega variantes si el producto las tiene
-shop_product_get_info → Verifica que el producto se creó correctamente
+shop_product_get_info       → Verifica que el producto se creó correctamente
 ```
 
 ---
@@ -144,7 +148,7 @@ La configuración fina del prompt, recordatorios y embudo se completa en el dash
 
 | Fase | MCP Server | Tools |
 |---|---|---|
-| Obtener datos | Dropi MCP (externo) | `get_product`, `list_products` |
+| Recibir datos | Usuario (manual) | — |
 | Investigar | Unified (Brave) | `brave_web_search`, `brave_image_search`, `brave_news_search` |
 | Buscar imágenes | Unified (AliExpress) | `aliexpress_image_search` |
 | Crear producto | Unified (ChateaPro) | `shop_create_product`, `shop_create_product_variant`, `shop_product_get_info` |
@@ -154,15 +158,7 @@ La configuración fina del prompt, recordatorios y embudo se completa en el dash
 
 ## Catálogo actual
 
-| Chatea ID | Nombre | Dropi ID | Precio |
-|-----------|--------|----------|--------|
-| 576451 | Foam Cleaner All-In-One | 915488 | $59,700 |
-| 576453 | Pendiente | 1583543 | — |
-
----
-
-## Productos pendientes de importar
-
-| Dropi ID | Estado |
-|----------|--------|
-| 1583543 | Sin datos — preguntar nombre, precio, imagen |
+| Chatea ID | Nombre | Precio |
+|-----------|--------|--------|
+| 576451 | Foam Cleaner All-In-One | $59,700 |
+| 576453 | Pendiente | — |
