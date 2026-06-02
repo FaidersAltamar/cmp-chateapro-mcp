@@ -5,58 +5,56 @@
 ```bash
 npm install
 cp ../.env.sample ../.env
-# Edita .env con CHATEAPRO_API_TOKEN (requerido) y BRAVE_API_KEY (opcional)
+# CHATEAPRO_API_TOKEN (requerido) + BRAVE_API_KEY (opcional)
 node index.js
 ```
 
-Requiere **Node.js >= 18**, ES modules (`"type": "module"`).
+Requiere Node.js >= 18, ES modules.
 
 ## Arquitectura
 
 - **Entry point**: `index.js` — Servidor MCP unificado (stdio) con 229+ tools
-- **Chatea Pro**: 220+ tools importadas de `../chateapro-mcp-server/tools.js`
-- **Brave Search**: 8 tools → `https://api.search.brave.com` (gated by `BRAVE_API_KEY`)
-- **AliExpress**: 1 tool → Thieve.co public API (no auth)
+- **Chatea Pro**: 220+ tools desde `../chateapro-mcp-server/tools.js`
+- **Brave Search**: 8 tools (si `BRAVE_API_KEY` está configurado)
+- **AliExpress**: 1 tool (Thieve.co, sin auth)
 
-## Flujo principal: Crear producto en ChateaPro
+## Flujo de creación de producto
 
-### Fase 1 — Recibir datos del usuario
-El usuario da: nombre, precio, imágenes (URLs), descripción, tipo.
+### 1. Recibir datos del usuario
+Pedir: nombre, precio, moneda, imagen (URL), asesor, tipo (fisico/digital), categoria, SKU, stock.
 
-### Fase 2 — Investigar (Brave Search)
+### 2. Investigar (opcional, requiere BRAVE_API_KEY)
 ```
-brave_web_search    → contexto de mercado, competencia
-brave_image_search  → imágenes de referencia  
-brave_news_search   → tendencias de la categoría
-```
-Extraer: descripción persuasiva, beneficios, público objetivo, keywords.
-
-### Fase 3 — Buscar similares por imagen (AliExpress)
-```
-aliexpress_image_search imageUrl="<URL principal>"
-```
-Devuelve hasta 8 productos similares con títulos, precios, ratings.
-
-### Fase 4 — Armar estructura y crear (ChateaPro)
-Con datos del usuario + Brave + AliExpress, la IA construye:
-- `informacion_de_producto` (nombre, precio, imagen, descripción)
-- `embudo_de_ventas` (mensaje inicial, pregunta de entrada)
-- `prompt` (prompt libre completo para el agente de ventas)
-- `recordatorios` (seguimiento)
-
-Luego:
-```
-shop_create_product         → crea el producto
-shop_create_product_variant → agrega variantes si aplica
-shop_product_get_info       → verifica creación
+brave_web_search   → mercado, competencia, keywords
+brave_image_search → imágenes de referencia
 ```
 
-### Fase 5 — Configurar flow
+### 3. AliExpress (opcional)
 ```
-flow_set_default_start_flow  → asigna flow de inicio
-flow_set_default_ai_provider → configura IA
-flow_create_tag              → tags del producto
-flow_set_bot_field           → campos personalizados
+aliexpress_image_search imageUrl="<URL>"
+```
+
+### 4. Construir JSON con 8 secciones exactas
+```
+informacion_de_producto, embudo_de_ventas, prompt, voz_con_ia,
+recordatorios, remarketing, activadores_del_flujo, meta_conversion
+```
+Ver SKILL.md para la estructura completa.
+
+### 5. Inyectar en ChateaPro como UN SOLO campo
+```
+flow_create_bot_field
+  name: "[Producto Ventas Wp] {numero}"
+  var_type: "array"
+  value: "<JSON serializado>"
+```
+
+### 6. Crear producto en el shop
+```
+shop_create_product
+  name, price (entero), image, status: "active", type, vendor, sku
+shop_create_product_variant → track_stock: 1, qty, allow_no_stock_sell: 0
+shop_product_get_info → verificar
 ```
 
 ## Environment Variables
@@ -64,29 +62,17 @@ flow_set_bot_field           → campos personalizados
 | Variable | Required | Description |
 |---|---|---|
 | `CHATEAPRO_API_TOKEN` | Yes | Chatea Pro Bearer Token |
-| `CHATEAPRO_API_URL` | No | Custom API URL (default: https://chateapro.app/api) |
 | `BRAVE_API_KEY` | No | Brave Search API key |
-| `DROPI_STORE_ID` | No | Dropi Store ID (integration) |
-| `DROPI_API_KEY` | No | Dropi API Key (integration) |
-| `SHOPIFY_STORE_URL` | No | Shopify store URL |
-| `SHOPIFY_ACCESS_TOKEN` | No | Shopify access token |
 
-## Tools clave por categoría
+## Tools clave
 
-### Producto
-`shop_create_product`, `shop_update_product`, `shop_delete_product`, `shop_product_get_info`, `shop_products`, `shop_create_product_variant`, `shop_product_variants`, `shop_update_product_variant`, `shop_delete_product_variant`
-
-### Flow / AI
-`flow_set_default_start_flow`, `flow_set_web_chat_widget_default_start_flow`, `flow_set_audio_transcription`, `flow_get_default_ai_provider`, `flow_set_default_ai_provider`, `flow_ai_agents`, `flow_update_ai_agent_provider`
-
-### Suscriptores
-`subscribers_list`, `subscriber_get_info`, `subscriber_create`, `subscriber_update`, `subscriber_delete`, `subscriber_add_tag`, `subscriber_set_user_field`
-
-### Sending
-`subscriber_send_main_flow`, `subscriber_send_sub_flow`, `subscriber_broadcast`, `subscriber_broadcast_by_tag`, `subscriber_send_text`, `subscriber_send_sms`, `subscriber_send_email`
-
-### Brave
-`brave_web_search`, `brave_image_search`, `brave_video_search`, `brave_news_search`, `brave_local_search`, `brave_summarizer`, `brave_llm_context`, `brave_place_search`
-
-### AliExpress
-`aliexpress_image_search`
+| Categoría | Tools |
+|---|---|
+| Validación | `user_info`, `team_info` |
+| Brave | `brave_web_search`, `brave_image_search`, `brave_video_search`, `brave_news_search`, `brave_local_search`, `brave_summarizer`, `brave_llm_context`, `brave_place_search` |
+| AliExpress | `aliexpress_image_search` |
+| Bot Fields | `flow_create_bot_field`, `flow_set_bot_field`, `flow_bot_fields`, `flow_delete_bot_field`, `flow_set_bot_field_by_name`, `flow_delete_bot_field_by_name` |
+| Producto | `shop_create_product`, `shop_update_product`, `shop_delete_product`, `shop_product_get_info`, `shop_products`, `shop_create_product_variant`, `shop_update_product_variant` |
+| Flow | `flow_set_default_start_flow`, `flow_set_default_ai_provider`, `flow_get_default_ai_provider`, `flow_create_tag` |
+| Subscriber | `subscribers_list`, `subscriber_get_info`, `subscriber_create`, `subscriber_update` |
+| Sending | `subscriber_broadcast`, `subscriber_send_text`, `subscriber_send_sms`, `subscriber_send_email` |

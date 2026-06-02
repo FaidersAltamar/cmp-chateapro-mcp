@@ -91,7 +91,7 @@ cd unified-mcp-server && npm install && cd ..
 ## Flujo de creación de producto
 
 ```
-Usuario: "Crea este producto: Nombre X, Precio Y, Imagen Z..."
+Usuario: "Crea producto: Hydrocare, $41,000, imagen.url, asesor Wilson..."
                     │
     ┌───────────────┼───────────────┐
     ▼               ▼               ▼
@@ -100,20 +100,22 @@ Usuario: "Crea este producto: Nombre X, Precio Y, Imagen Z..."
   nombre            contexto        similares
   precio            mercado         por imagen
   imágenes          keywords        precios ref
-  descripción       tendencias
     │               │               │
     └───────────────┼───────────────┘
                     ▼
               IA ensambla
-         estructura del producto
+         JSON con 8 secciones
                     │
                     ▼
-            ChateaPro MCP
-         ──────────────────
-         shop_create_product
+    ┌───────────────────────────────┐
+    │  flow_create_bot_field        │
+    │  [Producto Ventas Wp] 109     │
+    │  (UN solo campo con todo)     │
+    └───────────────────────────────┘
+                    │
+                    ▼
+            shop_create_product
          shop_create_product_variant
-         flow_set_default_start_flow
-         flow_set_default_ai_provider
                     │
                     ▼
            Producto creado ✓
@@ -123,12 +125,12 @@ Usuario: "Crea este producto: Nombre X, Precio Y, Imagen Z..."
 
 | # | Fase | Fuente | Tools clave |
 |---|---|---|---|
-| 1 | Recibir datos | Usuario (manual) | — |
-| 2 | Investigar mercado | Brave | `brave_web_search`, `brave_image_search`, `brave_news_search` |
-| 3 | Buscar similares | AliExpress | `aliexpress_image_search` |
-| 4 | Armar estructura | IA | Genera JSON con info + embudo + prompt + recordatorios |
-| 5 | Crear en ChateaPro | ChateaPro | `shop_create_product`, `shop_create_product_variant` |
-| 6 | Configurar flow | ChateaPro | `flow_set_default_start_flow`, `flow_set_default_ai_provider`, `flow_create_tag` |
+| 1 | Recibir datos | Usuario (manual) | Pedir: nombre, precio, imagen, asesor, tipo |
+| 2 | Investigar (opcional) | Brave | `brave_web_search`, `brave_image_search` |
+| 3 | Similares (opcional) | AliExpress | `aliexpress_image_search` |
+| 4 | Armar JSON 8 secciones | IA | Estructura exacta en SKILL.md |
+| 5 | Inyectar campo único | ChateaPro | `flow_create_bot_field` → `[Producto Ventas Wp] {N}` |
+| 6 | Crear en shop | ChateaPro | `shop_create_product`, `shop_create_product_variant` |
 
 ---
 

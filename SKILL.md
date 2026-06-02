@@ -1,164 +1,344 @@
-# Skill: Creación de Producto en ChateaPro con IA — Flujo Completo
+# Skill: Creación de Producto en ChateaPro con IA
 
-Este skill guía al usuario desde que clona el repo hasta tener un producto creado en ChateaPro, enriquecido con investigación de Brave Search y búsqueda visual de AliExpress.
+Este skill define el proceso completo para que un nuevo usuario clone el repo desde GitHub, configure el entorno y cree productos en ChateaPro con IA.
 
 ---
 
-## Requisitos previos
+## PASO 0 — Primer arranque (el usuario clonó el repo)
 
-El usuario debe tener clonado el repo y configurar **2 variables** en `.env`:
-
-| Variable | Servidor | Dónde obtenerla |
-|---|---|---|
-| `CHATEAPRO_API_TOKEN` | Unified MCP | https://chateapro.app → Workspace Settings |
-| `BRAVE_API_KEY` | Unified MCP | https://brave.com/search/api/ |
-
-AliExpress no requiere credenciales (API pública de Thieve.co).
+### 0.1 Clonar e instalar
 
 ```bash
+git clone https://github.com/FaidersAltamar/cmp-chateapro-mcp.git
+cd cmp-chateapro-mcp
 cp .env.sample .env
-# Edita .env con tus credenciales
-cd unified-mcp-server && npm install && node index.js
 ```
 
----
+### 0.2 Editar .env con las credenciales
 
-## PASO 0 — Validar conexiones
-
-```
-user_info                → ChateaPro: ¿token válido?
-team_info                → Workspace: ¿activo?
-shop_products            → Catálogo: ¿productos existentes?
+```env
+CHATEAPRO_API_TOKEN=token-de-chateapro
+BRAVE_API_KEY=key-de-brave-search
 ```
 
----
+- **CHATEAPRO_API_TOKEN**: obligatorio. Se obtiene en https://chateapro.app → Workspace Settings
+- **BRAVE_API_KEY**: opcional. Se obtiene en https://brave.com/search/api/. Sin esto, las tools de Brave no aparecen.
 
-## PASO 1 — Recibir datos del producto
+### 0.3 Instalar dependencias
 
-El usuario proporciona manualmente los datos del producto:
-
-| Campo | Ejemplo |
-|---|---|
-| **Nombre** | Foam Cleaner All-In-One |
-| **Precio** | 59700.00 |
-| **Imágenes** (URLs) | https://cdn.shopify.com/.../producto.png, https://... |
-| **Descripción** | Limpiador multisuperficies de 250ml... |
-| **Tipo** | físico / digital |
-| **Variantes** | Color, Talla (si aplica) |
-
-> Si el usuario viene de Dropi u otra fuente, simplemente pega los datos. No se requiere conexión directa a Dropi.
-
----
-
-## PASO 2 — Investigar el producto con Brave Search
-
-```
-brave_web_search    → contexto de mercado, competencia, precios de referencia
-brave_image_search  → imágenes del producto para inspirar descripciones
-brave_news_search   → tendencias o noticias sobre la categoría
+```bash
+cd unified-mcp-server && npm install && cd ..
 ```
 
-La IA extrae:
-- Descripción persuasiva del producto
-- Beneficios clave
-- Público objetivo
-- Precios de referencia en el mercado
-- Palabras clave para el embudo de ventas
+### 0.4 Conectar al cliente MCP
 
----
-
-## PASO 3 — Buscar productos similares por imagen en AliExpress
-
-```
-aliexpress_image_search  imageUrl="<URL de la imagen principal del producto>"
-```
-
-Devuelve hasta 8 productos similares con:
-- Títulos alternativos
-- Rangos de precio en AliExpress
-- Ratings y número de órdenes
-- Imágenes de productos competidores
-
-Esto enriquece el conocimiento del producto y ayuda a posicionarlo en el mercado.
-
----
-
-## PASO 4 — Armar la estructura del producto para ChateaPro
-
-Con los datos recolectados (usuario + Brave + AliExpress), la IA construye esta estructura:
+Agregar al archivo de configuración del cliente MCP (Claude Desktop, OpenCode, Cursor, etc.):
 
 ```json
 {
-  "informacion_de_producto": {
-    "nombre": "Nombre del producto",
-    "precio": "59700.00",
-    "tipo": "fisico",
-    "variable": "SIMPLE",
-    "imagen": "URL de imagen principal",
-    "estado": "activo",
-    "descripcion": "Descripción generada con datos de Brave + AliExpress"
-  },
-  "embudo_de_ventas": {
-    "mensaje_inicial": "Mensaje de bienvenida personalizado",
-    "multimedia": ["URLs de imágenes del producto"],
-    "pregunta_de_entrada": "Pregunta para calificar al lead"
-  },
-  "prompt": {
-    "prompt_libre": "Prompt completo generado por IA con contextualización, ficha técnica, guion conversacional, posibles situaciones y reglas"
-  },
-  "recordatorios": {
-    "tiempo_1": "10 minutos",
-    "mensaje_1": "Mensaje de seguimiento 1",
-    "tiempo_2": "20 minutos",
-    "mensaje_2": "Mensaje de seguimiento 2",
-    "hora_min": "08:00",
-    "hora_max": "22:00"
+  "mcpServers": {
+    "unified": {
+      "command": "node",
+      "args": ["<ruta>/cmp-chateapro-mcp/unified-mcp-server/index.js"],
+      "env": {
+        "CHATEAPRO_API_TOKEN": "token-de-chateapro",
+        "BRAVE_API_KEY": "key-de-brave-search"
+      }
+    }
   }
 }
 ```
 
-**Nota:** La estructura completa (voz_con_ia, remarketing, activadores_del_flujo, meta_conversion) se configura en el dashboard de ChateaPro. La IA genera recomendaciones.
-
----
-
-## PASO 5 — Crear el producto en ChateaPro
+### 0.5 Validar que todo funciona
 
 ```
-shop_create_product         → Crea el producto con nombre, precio, imagen, descripción
-shop_create_product_variant → Agrega variantes si el producto las tiene
-shop_product_get_info       → Verifica que el producto se creó correctamente
+user_info     → debe devolver {id, name, email}
+team_info     → debe mostrar el workspace activo
 ```
 
 ---
 
-## PASO 6 — Configurar el flow de ventas
+## PASO 1 — Recibir los datos del producto
 
-```
-flow_set_default_start_flow    → Asigna el flow de inicio
-flow_set_default_ai_provider   → Configura el proveedor de IA
-flow_create_tag                → Crea tags para el producto
-flow_set_bot_field             → Configura campos personalizados
-```
+El usuario proporciona los datos manualmente. Pedir siempre:
 
-La configuración fina del prompt, recordatorios y embudo se completa en el dashboard de ChateaPro.
-
----
-
-## Resumen de tools por fase
-
-| Fase | MCP Server | Tools |
+| Dato | Obligatorio | Ejemplo |
 |---|---|---|
-| Recibir datos | Usuario (manual) | — |
-| Investigar | Unified (Brave) | `brave_web_search`, `brave_image_search`, `brave_news_search` |
-| Buscar imágenes | Unified (AliExpress) | `aliexpress_image_search` |
-| Crear producto | Unified (ChateaPro) | `shop_create_product`, `shop_create_product_variant`, `shop_product_get_info` |
-| Configurar flow | Unified (ChateaPro) | `flow_set_default_start_flow`, `flow_set_default_ai_provider`, `flow_create_tag`, `flow_set_bot_field` |
+| **Nombre del producto** | Sí | `Hydrocare - Gel Hidratante con Ácido Hialurónico` |
+| **Precio** | Sí | `41000` (número entero, sin decimales para ChateaPro) |
+| **Moneda** | Sí | `COP` |
+| **Imagen principal** (URL) | Sí | `https://d39ru7awumhhs2.cloudfront.net/.../HYDROCARE.png` |
+| **ID de Dropi** (si aplica) | No | `915488` |
+| **Tipo de producto** | Sí | `fisico` o `digital` |
+| **Nombre del asesor** | Sí | `Wilson` |
+| **Categoría** | No | `Belleza`, `Limpieza`, etc. |
+| **Descripción** | No | Texto con características y beneficios |
+| **SKU** | No | `7708679955630` |
+| **Stock** | No | `2000` |
+| **Bodega / Ciudad** | No | `Cali` |
 
 ---
 
-## Catálogo actual
+## PASO 2 — Investigar el producto (enriquecimiento opcional)
 
-| Chatea ID | Nombre | Precio |
-|-----------|--------|--------|
-| 576451 | Foam Cleaner All-In-One | $59,700 |
-| 576453 | Pendiente | — |
+Si el usuario tiene `BRAVE_API_KEY` configurado, usar Brave Search para enriquecer:
+
+```
+brave_web_search   → investigar mercado, competencia, precios de referencia
+brave_image_search → buscar imágenes similares del producto
+```
+
+Si no tiene Brave, saltar este paso y usar solo los datos del usuario.
+
+---
+
+## PASO 3 — Buscar en AliExpress por imagen (enriquecimiento opcional)
+
+```
+aliexpress_image_search  imageUrl="<URL de la imagen principal>"
+```
+
+Devuelve hasta 8 productos similares con título, precio, rating y órdenes. Usar esta información para:
+- Confirmar que el precio es competitivo
+- Obtener palabras clave alternativas
+- Inspirar la descripción del producto
+
+Si la imagen no es accesible públicamente o AliExpress no devuelve resultados, continuar sin este paso.
+
+---
+
+## PASO 4 — Construir la estructura JSON del producto
+
+Armar un JSON con exactamente estas 8 secciones. Este JSON se inyecta en UN SOLO campo de ChateaPro.
+
+### Estructura obligatoria
+
+```json
+{
+    "informacion_de_producto": {
+        "id": "",
+        "nombre": "",
+        "precio": "",
+        "moneda": "",
+        "id_dropi": "",
+        "tipo": "",
+        "variable": "",
+        "imagen": "",
+        "estado": "",
+        "dta_prompt": ""
+    },
+    "embudo_de_ventas": {
+        "mensaje_inicial": "",
+        "multimedia": [],
+        "pregunta_de_entrada": ""
+    },
+    "prompt": {
+        "tipo_de_prompt": "",
+        "prompt_libre": "",
+        "prompt_guiado_contextualizacion": "",
+        "prompt_guiado_ficha_tecnica": "",
+        "prompt_guiado_guion_conversacional": "",
+        "prompt_guiado_posibles_situaciones": "",
+        "prompt_guiado_reglas": ""
+    },
+    "voz_con_ia": {
+        "id": "",
+        "api_key": "",
+        "estabilidad": "",
+        "similaridad": "",
+        "estilo": "",
+        "speaker_boost": "",
+        "habilitar": "",
+        "reglas": {}
+    },
+    "recordatorios": {
+        "tiempo_1": "",
+        "mensaje_1": "",
+        "tiempo_2": "",
+        "mensaje_2": "",
+        "hora_min": "",
+        "hora_max": ""
+    },
+    "remarketing": {
+        "tiempo_1": "",
+        "plantilla_1": {"namespace": "", "name": "", "lang": ""},
+        "tiempo_2": "",
+        "plantilla_2": {"namespace": "", "name": "", "lang": ""},
+        "hora_min": "",
+        "hora_max": ""
+    },
+    "activadores_del_flujo": {
+        "palabras_clave": "",
+        "ids_de_anuncio": ""
+    },
+    "meta_conversion": {
+        "habilitado": false,
+        "por_defecto": false,
+        "id": "",
+        "aud_id": ""
+    }
+}
+```
+
+### Reglas para llenar cada sección
+
+**informacion_de_producto:**
+- `nombre`: exactamente como lo dio el usuario
+- `precio`: en formato string con decimales `"41000.00"`
+- `moneda`: `"COP"` por defecto
+- `id_dropi`: el ID de Dropi si aplica, si no `""`
+- `tipo`: `"fisico"` o `"digital"`
+- `variable`: `"SIMPLE"` (si no tiene variantes)
+- `imagen`: URL pública de la imagen principal
+- `estado`: `"activo"`
+- `dta_prompt`: dejar `""`
+
+**embudo_de_ventas:**
+- `mensaje_inicial`: "Hola, soy {asesor}. ¿Te interesa conocer más sobre nuestro {producto}?"
+- `multimedia`: array con URLs de imágenes
+- `pregunta_de_entrada`: una pregunta para calificar al lead según el tipo de producto
+
+**prompt:**
+- `tipo_de_prompt`: `"libre"` o `"guiado"`
+- `prompt_libre`: el prompt completo si es libre. Debe incluir 5 etapas:
+  1. CONTEXTUALIZACIÓN (asesor, rol, audiencia, lenguaje)
+  2. FICHA TÉCNICA (nombre, precio, envío, características, beneficios, imagen)
+  3. GUION CONVERSACIONAL (ejemplo de diálogo cliente-asistente)
+  4. POSIBLES SITUACIONES (preguntas frecuentes y respuestas)
+  5. REGLAS (normas de comportamiento del asistente)
+- Los campos `prompt_guiado_*` se dejan vacíos si el prompt es libre
+
+**voz_con_ia:**
+- Mantener los valores por defecto del ejemplo (ElevenLabs)
+- `habilitar`: `"no"` por defecto
+
+**recordatorios:**
+- `tiempo_1`: `"10 minutos"`
+- `mensaje_1`: `"Me dejaste en visto."`
+- `tiempo_2`: `"20 minutos"`
+- `mensaje_2`: mensaje de urgencia/empatía
+- `hora_min`: `"08:00"`, `hora_max`: `"22:00"`
+
+**remarketing:**
+- Dejar vacío por defecto. Se configura después en el dashboard.
+
+**activadores_del_flujo:**
+- `palabras_clave`: lista separada por comas con el nombre del producto y variaciones
+- `ids_de_anuncio`: dejar con comas vacías `",,,,,,"`
+
+**meta_conversion:**
+- `habilitado`: `false` por defecto
+
+---
+
+## PASO 5 — Inyectar el JSON en ChateaPro
+
+El JSON completo se guarda en **UN SOLO campo** de tipo bot field en ChateaPro.
+
+### 5.1 Crear el campo
+
+```
+flow_create_bot_field
+  name: "[Producto Ventas Wp] {numero}"
+  var_type: "array"
+  value: "<JSON completo como string>"
+```
+
+El `{numero}` es un identificador único para el producto. Usar el consecutivo más alto disponible. Ejemplo: `[Producto Ventas Wp] 109`.
+
+### 5.2 Verificar que se guardó correctamente
+
+```
+flow_bot_fields   → confirmar que el campo aparece con name "[Producto Ventas Wp] {numero}"
+```
+
+---
+
+## PASO 6 — Crear el producto en el shop de ChateaPro
+
+```
+shop_create_product
+  name: "{nombre del producto}"
+  price: {precio como entero}
+  image: "{URL de la imagen}"
+  status: "active"
+  type: "{categoria}"
+  vendor: "{nombre del asesor o vendedor}"
+  sku: "{SKU si aplica}"
+  use_variant: 0
+  qty: {stock}
+  tags: ["tag1", "tag2", ...]
+```
+
+### 6.1 Actualizar stock si es necesario
+
+```
+shop_update_product_variant
+  track_stock: 1
+  qty: {cantidad}
+  allow_no_stock_sell: 0
+```
+
+### 6.2 Verificar
+
+```
+shop_product_get_info  productId={id}
+```
+
+---
+
+## PASO 7 — Actualizar el catálogo (opcional)
+
+Si existe el campo `[Skill] Product Catalog WP`, actualizarlo con el nuevo producto:
+
+```
+flow_set_bot_field
+  var_ns: "ns-del-campo-catalog"
+  value: "<JSON del catálogo actualizado>"
+```
+
+---
+
+## Resumen del flujo
+
+```
+Usuario da: nombre, precio, imagen, asesor, tipo
+        │
+        ├─→ Brave Search (opcional) → mercado, keywords
+        ├─→ AliExpress (opcional) → similares, precios ref
+        │
+        ├─→ Construir JSON con 8 secciones
+        │
+        ├─→ flow_create_bot_field → [Producto Ventas Wp] {N}
+        │
+        └─→ shop_create_product → producto en el shop
+```
+
+---
+
+## Tools clave
+
+| Tool | Qué hace |
+|---|---|
+| `user_info` | Validar token de ChateaPro |
+| `brave_web_search` | Investigar mercado del producto |
+| `aliexpress_image_search` | Buscar similares por imagen |
+| `flow_create_bot_field` | Crear campo `[Producto Ventas Wp] {N}` |
+| `flow_set_bot_field` | Actualizar valor de un campo |
+| `flow_bot_fields` | Listar todos los campos |
+| `flow_delete_bot_field` | Eliminar un campo |
+| `shop_create_product` | Crear producto en el shop |
+| `shop_update_product` | Actualizar producto |
+| `shop_product_get_info` | Verificar producto creado |
+| `shop_create_product_variant` | Actualizar stock del variant |
+
+---
+
+## Notas importantes
+
+1. **Un solo campo por producto.** No crear múltiples campos. Toda la configuración del producto va en `[Producto Ventas Wp] {N}`.
+2. **El número en el nombre es el identificador.** Usar números consecutivos. Si el último es 109, el siguiente es 110.
+3. **El JSON se guarda como string.** `flow_create_bot_field` recibe el JSON serializado en el campo `value`.
+4. **Brave y AliExpress son opcionales.** Si no hay `BRAVE_API_KEY`, saltar esos pasos. El producto se crea igual con los datos del usuario.
+5. **Sin conexión a Dropi.** Los datos del producto siempre los da el usuario manualmente. No intentar conectar a la API de Dropi.
+6. **Borrar antes de reintentar.** Si algo sale mal, usar `flow_delete_bot_field` y `shop_delete_product` para limpiar antes de volver a crear.
