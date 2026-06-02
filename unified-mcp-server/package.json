@@ -1,0 +1,13 @@
+{
+  "name": "unified-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server unificado: Chatea Pro (220 tools), Brave Search (8 tools), AliExpress Image Search",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  }
+}
