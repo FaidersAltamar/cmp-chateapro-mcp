@@ -48,7 +48,15 @@ git clone https://github.com/FaidersAltamar/cmp-chateapro-mcp.git
 cd cmp-chateapro-mcp
 ```
 
-### 2. Configurar variables de entorno
+### 2. Instalar dependencias (OBLIGATORIO)
+
+```bash
+cd unified-mcp-server && npm install && cd ..
+```
+
+> **Sin este paso el servidor no arranca.** `npm install` descarga `@modelcontextprotocol/sdk`.
+
+### 3. Configurar variables de entorno
 
 ```bash
 cp .env.sample .env
@@ -61,15 +69,30 @@ CHATEAPRO_API_TOKEN=tu-token-de-chateapro
 BRAVE_API_KEY=tu-brave-api-key
 ```
 
-### 3. Instalar
+- **CHATEAPRO_API_TOKEN**: obligatorio. https://chateapro.app → Workspace Settings
+- **BRAVE_API_KEY**: opcional. Si no se configura, las 8 tools de Brave se ocultan.
+
+### 4. Verificar que arranca
 
 ```bash
-cd unified-mcp-server && npm install && cd ..
+cd unified-mcp-server && node -e "
+import('./index.js').then(() => {
+  console.error('OK - Servidor listo');
+  process.exit(0);
+}).catch(e => {
+  console.error('FALLO:', e.message);
+  process.exit(1);
+});
+"
 ```
+
+Debes ver: `Unified MCP Server running on stdio — ChateaPro + AliExpress + Brave[enabled/disabled]`
 
 ---
 
 ## Configuración del cliente MCP
+
+> **IMPORTANTE:** Reemplaza `<ruta>` con la ruta ABSOLUTA donde clonaste el repo. No uses `~`, usa la ruta completa.
 
 ```json
 {
@@ -84,6 +107,56 @@ cd unified-mcp-server && npm install && cd ..
     }
   }
 }
+```
+
+### ¿Cómo obtener la ruta absoluta?
+
+```bash
+# En macOS/Linux:
+cd cmp-chateapro-mcp && pwd
+# Copia esa ruta y reemplaza <ruta> en el JSON de arriba.
+```
+
+### Archivos de configuración por plataforma
+
+| Cliente | Archivo |
+|---|---|
+| **Claude Desktop** macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| **OpenCode** | `~/.config/opencode/opencode.json` |
+| **Cursor** | `~/.cursor/mcp.json` |
+| **Windsurf** | `~/.codeium/windsurf/mcp_config.json` |
+
+---
+
+## Troubleshooting
+
+### "El servidor no aparece en el cliente MCP"
+
+1. Verifica que `npm install` se ejecutó dentro de `unified-mcp-server/`
+2. Verifica que `.env` existe en la raíz del repo con `CHATEAPRO_API_TOKEN`
+3. Verifica que la ruta en el JSON de configuración es **absoluta** y apunta a `unified-mcp-server/index.js`
+4. Reinicia el cliente MCP después de cada cambio
+
+### "Cannot find package @modelcontextprotocol/sdk"
+
+```bash
+cd unified-mcp-server && rm -rf node_modules package-lock.json && npm install
+```
+
+### "CHATEAPRO_API_TOKEN environment variable is required"
+
+Copia `.env.sample` a `.env` y edita el token. El `.env` debe estar en la raíz del repo (`cmp-chateapro-mcp/.env`), NO dentro de `unified-mcp-server/`.
+
+### "Error: Cannot find module ../chateapro-mcp-server/tools.js"
+
+No moviste las carpetas. La estructura debe ser exactamente:
+```
+cmp-chateapro-mcp/
+├── .env
+├── unified-mcp-server/
+│   └── index.js
+└── chateapro-mcp-server/
+    └── tools.js
 ```
 
 ---
