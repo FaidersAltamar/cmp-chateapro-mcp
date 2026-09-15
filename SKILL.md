@@ -117,73 +117,113 @@ Devuelve hasta 8 productos por búsqueda, cada uno con múltiples imágenes. Eje
 
 ## PASO 4 — Construir la estructura JSON del producto
 
-Armar un JSON con exactamente estas 8 secciones. Este JSON se inyecta en UN SOLO campo de ChateaPro.
+Armar un JSON con estas **10 secciones** (plantilla ChateaPro actual). Se inyecta en UN SOLO bot field.
 
 ### Estructura obligatoria
 
 ```json
 {
-    "informacion_de_producto": {
-        "id": "",
-        "nombre": "",
-        "precio": "",
-        "moneda": "",
-        "id_dropi": "",
-        "tipo": "",
-        "variable": "",
-        "imagen": "",
-        "estado": "",
-        "dta_prompt": ""
+    "activadores_del_flujo": {
+        "ids_de_anuncio": ",,,,,,",
+        "palabras_clave": ""
     },
     "embudo_de_ventas": {
         "mensaje_inicial": "",
         "multimedia": [],
         "pregunta_de_entrada": ""
     },
+    "informacion_de_producto": {
+        "dta_prompt": "",
+        "estado": "activo",
+        "id_dropi": "",
+        "imagen": "",
+        "moneda": "COP",
+        "nombre": "",
+        "precio": "",
+        "tipo": "fisico",
+        "variable": "SIMPLE"
+    },
+    "meta_conversion": {
+        "aud_id": "",
+        "habilitado": false,
+        "id": "",
+        "por_defecto": true
+    },
     "prompt": {
-        "tipo_de_prompt": "",
-        "prompt_libre": "",
+        "indice_variables": "",
         "prompt_guiado_contextualizacion": "",
         "prompt_guiado_ficha_tecnica": "",
         "prompt_guiado_guion_conversacional": "",
         "prompt_guiado_posibles_situaciones": "",
-        "prompt_guiado_reglas": ""
-    },
-    "voz_con_ia": {
-        "id": "",
-        "api_key": "",
-        "estabilidad": "",
-        "similaridad": "",
-        "estilo": "",
-        "speaker_boost": "",
-        "habilitar": "",
-        "reglas": {}
+        "prompt_guiado_reglas": "",
+        "prompt_libre": "",
+        "tipo_de_prompt": "libre"
     },
     "recordatorios": {
-        "tiempo_1": "",
+        "activar_1": "si",
+        "activar_2": "si",
+        "activar_rango": "no",
+        "hora_max": "22:00",
+        "hora_min": "08:00",
         "mensaje_1": "",
-        "tiempo_2": "",
         "mensaje_2": "",
-        "hora_min": "",
-        "hora_max": ""
+        "tiempo_1": "30 minutos",
+        "tiempo_2": "2 horas"
     },
     "remarketing": {
-        "tiempo_1": "",
-        "plantilla_1": {"namespace": "", "name": "", "lang": ""},
-        "tiempo_2": "",
-        "plantilla_2": {"namespace": "", "name": "", "lang": ""},
+        "activar_1": "si",
+        "activar_2": "si",
+        "hora_max": "",
         "hora_min": "",
-        "hora_max": ""
+        "plantilla_1": { "lang": "", "name": "", "namespace": "" },
+        "plantilla_2": { "lang": "", "name": "", "namespace": "" },
+        "prompt_1": "",
+        "prompt_2": "",
+        "tiempo_1": "3 dias",
+        "tiempo_2": "5 dias"
     },
-    "activadores_del_flujo": {
-        "palabras_clave": "",
-        "ids_de_anuncio": ""
+    "source": "marketplace",
+    "upsells": {
+        "1": {
+            "activo": "no",
+            "boton": "",
+            "descripcion": "",
+            "id_dropi": "",
+            "imagen": "",
+            "momento": "compra realizada",
+            "nombre": "",
+            "precio": "",
+            "titulo": "",
+            "variaciones": "SIMPLE"
+        },
+        "2": {
+            "activo": "no",
+            "boton": "",
+            "descripcion": "",
+            "id_dropi": "",
+            "imagen": "",
+            "momento": "compra realizada",
+            "nombre": "",
+            "precio": "",
+            "titulo": "",
+            "variaciones": "SIMPLE"
+        }
     },
-    "meta_conversion": {
-        "habilitado": false,
-        "por_defecto": false,
+    "voz_con_ia": {
+        "api_key": "",
+        "estabilidad": 0.3,
+        "estilo": 0.5,
+        "habilitar": "no",
         "id": "",
-        "aud_id": ""
+        "proveedor": "chatea_pro",
+        "reglas": {
+            "cantidadMaximaDeAudio": "0",
+            "probabilidadRespuestaAudio": "100",
+            "responderAudioConAudio": "no"
+        },
+        "similaridad": 0.7,
+        "speaker_boost": false,
+        "velocidad": 1
     }
 }
 ```
@@ -192,51 +232,49 @@ Armar un JSON con exactamente estas 8 secciones. Este JSON se inyecta en UN SOLO
 
 **informacion_de_producto:**
 - `nombre`: exactamente como lo dio el usuario
-- `precio`: en formato string con decimales `"41000.00"`
-- `moneda`: `"COP"` por defecto
-- `id_dropi`: el ID de Dropi si aplica, si no `""`
+- `precio`: string (`"41000"` COP o `"41.00"` USD)
+- `moneda`: `"COP"` o `"USD"`
+- `id_dropi`: ID Dropi si aplica
 - `tipo`: `"fisico"` o `"digital"`
-- `variable`: `"SIMPLE"` (si no tiene variantes)
-- `imagen`: URL pública de la imagen principal
+- `variable`: `"SIMPLE"` sin variantes
+- `imagen`: URL pública principal
 - `estado`: `"activo"`
-- `dta_prompt`: dejar `""`
+- `dta_prompt`: `""`
 
 **embudo_de_ventas:**
-- `mensaje_inicial`: "Hola, soy {asesor}. ¿Te interesa conocer más sobre nuestro {producto}?"
-- `multimedia`: array con URLs de imágenes
-- `pregunta_de_entrada`: una pregunta para calificar al lead según el tipo de producto
+- `mensaje_inicial`: saludo con nombre de asesora
+- `multimedia`: 10–20 URLs públicas (producto + AliExpress si aplica)
+- `pregunta_de_entrada`: califica lead (para ti / regalo)
 
 **prompt:**
-- `tipo_de_prompt`: `"libre"` o `"guiado"`
-- `prompt_libre`: el prompt completo si es libre. Debe incluir 5 etapas:
-  1. CONTEXTUALIZACIÓN (asesor, rol, audiencia, lenguaje)
-  2. FICHA TÉCNICA (nombre, precio, envío, características, beneficios, imagen)
-  3. GUION CONVERSACIONAL (ejemplo de diálogo cliente-asistente)
-  4. POSIBLES SITUACIONES (preguntas frecuentes y respuestas)
-  5. REGLAS (normas de comportamiento del asistente)
-- Los campos `prompt_guiado_*` se dejan vacíos si el prompt es libre
+- `tipo_de_prompt`: `"libre"` (recomendado) o `"guiado"`
+- `prompt_libre` H2H con: ROL, FILOSOFÍA, 0-A seguridad, 0-B estado, ficha, Int.1–4, logística, upsell, post-cierre
+- `indice_variables`: `""` si no editas variables en UI
+- `prompt_guiado_*`: vacíos si es libre
 
 **voz_con_ia:**
-- Mantener los valores por defecto del ejemplo (ElevenLabs)
-- `habilitar`: `"no"` por defecto
+- `proveedor`: `"chatea_pro"` o `"elevenlabs"`
+- `habilitar`: `"no"` por defecto; `speaker_boost` boolean
 
 **recordatorios:**
-- `tiempo_1`: `"10 minutos"`
-- `mensaje_1`: `"Me dejaste en visto."`
-- `tiempo_2`: `"20 minutos"`
-- `mensaje_2`: mensaje de urgencia/empatía
-- `hora_min`: `"08:00"`, `hora_max`: `"22:00"`
+- Incluir `activar_1` / `activar_2` / `activar_rango` (`"si"`/`"no"`)
+- Ventana `hora_min`/`hora_max` (ej. 08:00–22:00)
 
 **remarketing:**
-- Dejar vacío por defecto. Se configura después en el dashboard.
+- `activar_1`/`activar_2`, `prompt_1`/`prompt_2`, plantillas WA opcionales
+
+**upsells:**
+- Slots `"1"` y `"2"`; `activo: "si"` solo si hay producto real (nombre, precio, imagen, id_dropi)
 
 **activadores_del_flujo:**
-- `palabras_clave`: lista separada por comas con el nombre del producto y variaciones
-- `ids_de_anuncio`: dejar con comas vacías `",,,,,,"`
+- `palabras_clave`: CSV con nombre + ganchos + variaciones + comas de padding
+- `ids_de_anuncio`: IDs Meta o `",,,,,,"`
 
 **meta_conversion:**
-- `habilitado`: `false` por defecto
+- `por_defecto: true`; `habilitado: false` hasta configurar pixel
 
+**source:**
+- `"marketplace"` (Hub EHB) o `"producto_sin_prompt"` (export UI)
 ---
 
 ## PASO 5 — Inyectar el JSON en ChateaPro
@@ -315,7 +353,7 @@ Usuario da: nombre, precio, imagen, asesor, tipo
         ├─→ Brave Search (opcional) → mercado, keywords
         ├─→ AliExpress (OBLIGATORIO) → 3+ busquedas, 10+ imagenes
         │
-        ├─→ Construir JSON con 8 secciones
+        ├─→ Construir JSON con 10 secciones (incl. upsells + source)
         │
         ├─→ flow_create_bot_field → [Producto Ventas Wp] {N}
         │
